@@ -167,6 +167,9 @@
                                            { "xts-kuznechik", NULL };
  static const char *asn1_xts_kuznechik_i[] =
                                            { "1.2.643.2.52.1.5.5.2", NULL };
+/*Вихрь Мерсенна 19937_64 */
+static const char *asn1_mt19937_64_n[] =     { "mt19937_64", NULL };
+static const char *asn1_mt19937_64_i[] =     { "1.2.643.2.52.1.1.5", NULL };
 
  /*   id-gostr3412-2015-magma-ctracpkm OBJECT IDENTIFIER ::= { 1.2.643.7.1.1.5.1.1 }
       id-gostr3412-2015-kuznechik-ctracpkm OBJECT IDENTIFIER ::= { 1.2.643.7.1.1.5.2.1 } */
@@ -249,6 +252,7 @@
                                              "id-rfc4357-2001dh-paramSet",
                                              "cspdh",
                                              "cspa", NULL };
+
  static const char *asn1_w256_psb_i[] =    { "1.2.643.7.1.2.1.1.2",
                                              "1.2.643.2.2.35.1",
                                              "1.2.643.2.2.36.0", NULL };
@@ -457,6 +461,10 @@ static struct oid libakrypt_oids[] =
   {{ sizeof( struct random ), (ak_function_create_object *)ak_random_create_lcg,
                               (ak_function_destroy_object *)ak_random_destroy, NULL, NULL, NULL },
                                                                 ak_object_undefined, NULL, NULL }},
+{ random_generator, algorithm, asn1_mt19937_64_i, asn1_mt19937_64_n, NULL,
+ {{ sizeof( struct random ), (ak_function_create_object *)ak_random_create_mt19937_64,
+                             (ak_function_destroy_object *)ak_random_destroy, NULL, NULL, NULL },
+                                                               ak_object_undefined, NULL, NULL }},
 #if defined(__unix__) || defined(__APPLE__)
  { random_generator, algorithm, asn1_dev_random_i, asn1_dev_random_n, NULL,
   {{ sizeof( struct random ), (ak_function_create_object *)ak_random_create_random,

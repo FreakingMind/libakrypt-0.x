@@ -194,6 +194,109 @@
   value = ( value * 506098983240188723ULL ) + 71331*uval + vtme;
  return value ^ clk;
 }
+// /* ----------------------------------------------------------------------------------------------- */
+// /*                                 реализация класса rng_mt19937_64                                */
+// /* ----------------------------------------------------------------------------------------------- */
+
+ static int ak_random_mt19937_64_next( ak_random rnd )
+{
+  if( rnd == NULL ) return ak_error_message( ak_error_null_pointer, __func__ ,
+                                                      "use a null pointer to a random generator" );
+  static ak_uint64 mer[2] = {0x0, 0xB5026F5AA96619E9};
+  ak_uint64 x;
+  if( rnd->data.MT_64.index >= 312 || rnd->data.MT_64.index < 0 )
+  {
+      int counter;
+      for( counter = 0; counter < 312 - 156; counter++ )
+      {
+          x = ( rnd->data.MT_64.mt[counter] & 0xFFFFFFFF80000000 ) | ( rnd->data.MT_64.mt[counter+1] & 0x7FFFFFFF );
+          rnd->data.MT_64.mt[counter] = rnd->data.MT_64.mt[counter + 156] ^ ( x >> 1 ) ^ mer[x & 0x1];
+      }
+      for( ; counter < 312 - 1; counter++ )
+      {
+          x = ( rnd->data.MT_64.mt[counter] & 0xFFFFFFFF80000000 ) | ( rnd->data.MT_64.mt[counter+1] & 0x7FFFFFFF );
+          rnd->data.MT_64.mt[counter] = rnd->data.MT_64.mt[counter + ( 156 - 312 )] ^ ( x >> 1 ) ^ mer[x & 0x1];
+      }
+      x = ( rnd->data.MT_64.mt[312 - 1] & 0xFFFFFFFF80000000 ) | ( rnd->data.MT_64.mt[0] & 0x7FFFFFFF );
+      rnd->data.MT_64.mt[312 - 1] = rnd->data.MT_64.mt[156 - 1] ^ ( x >> 1 ) ^ mer[x & 0x1];
+      rnd->data.MT_64.index = 0;
+  }
+
+  x = rnd->data.MT_64.mt[rnd->data.MT_64.index++];
+  x ^= ( x >> 29 );& 0x5555555555555555;
+  x ^= ( x << 17 ) & 0x71D67FFFEDA60000;
+  x ^= ( x << 37 ) & 0xFFF7EEE000000000;
+  x ^= ( x >> 43 );
+
+  rnd->data.MT_64.value = x;
+ return ak_error_ok;
+}
+
+///* ----------------------------------------------------------------------------------------------- */
+
+ static int ak_random_mt19937_64_randomize_ptr( ak_random rnd, const ak_pointer ptr, const ssize_t size )
+{
+  ssize_t zerp = 0;
+  ak_uint64 *value = ptr;
+  if( rnd == NULL ) return ak_error_message( ak_error_null_pointer, __func__ ,
+                                                      "use a null pointer to a random generator" );
+  if( ptr == NULL ) return ak_error_message( ak_error_null_pointer, __func__ ,
+                                                          "use a null pointer to initial vector" );
+  if( size <= 0 ) return ak_error_message( ak_error_wrong_length, __func__ ,
+                                                          "use initial vector with wrong length" );
+
+  rnd->data.MT_64.mt[0] = value[0];
+  for( rnd->data.MT_64.index=1; rnd->data.MT.index < 312; rnd->data.MT_64.index++ )
+  {
+      rnd->data.MT_64.mt[rnd->data.MT_64.index] = ( 6364136223846793005 * ( rnd->data.MT_64.mt[rnd->data.MT_64.index-1] ^ ( rnd->data.MT_64.mt[rnd->data.MT_64.index-1] >> 62 ) ) + rnd->data.MT_64.index );
+  }
+ return rnd->next( rnd );
+}
+
+// /* ----------------------------------------------------------------------------------------------- */
+
+  static int ak_random_mt19937_64_random( ak_random rnd, const ak_pointer ptr, const ssize_t size )
+ {
+   ssize_t zerp = 0;
+   ak_uint64 *value = ptr;
+   if( rnd == NULL ) return ak_error_message( ak_error_null_pointer, __func__ ,
+                                                       "use a null pointer to a random generator" );
+   if( ptr == NULL ) return ak_error_message( ak_error_null_pointer, __func__ ,
+                                                                     "use a null pointer to data" );
+   if( size <= 0 ) return ak_error_message( ak_error_wrong_length, __func__ ,
+                                                            "use a data vector with wrong length" );
+   begin:
+     value[zerp] = (ak_uint64) ( rnd->data.MT_64.value );
+     rnd->next( rnd );
+     if( ++zerp < size ) goto begin;
+  return ak_error_ok;
+ }
+
+// /* ----------------------------------------------------------------------------------------------- */
+// /*  Генератор вырабатывает последовательность внутренних состояний по Вихрю Мерсенна MT19937_64
+//     @param generator Контекст создаваемого генератора.
+//     \return В случае успеха, функция возвращает \ref ak_error_ok. В противном случае
+//             возвращается код ошибки.                                                               */
+// /* ----------------------------------------------------------------------------------------------- */
+
+
+ int ak_random_create_mt19937_64( ak_random generator )
+ {
+     int error = ak_error_ok;
+     ak_uint64 initsv = (ak_uint64)ak_random_value();
+
+     if(( error = ak_random_create( generator )) != ak_error_ok )
+         return ak_error_message( error, __func__ , "wrong initialization of random generator" );
+
+     generator->oid = ak_oid_find_by_name( "mt19937_64" );
+     generator->next = ak_random_mt19937_64_next;
+     generator->randomize_ptr = ak_random_mt19937_64_randomize_ptr;
+     generator->random = ak_random_mt19937_64_random;
+
+     /*присваиваем случайное начальное значение */
+      ak_random_mt19937_64_randomize_ptr( generator, &initsv, sizeof( ak_uint64 ));
+      return error;
+ }
 
 /* ----------------------------------------------------------------------------------------------- */
 /*                                 реализация класса rng_lcg                                       */
