@@ -223,7 +223,7 @@
   }
 
   x = rnd->data.MT_64.mt[rnd->data.MT_64.index++];
-  x ^= ( x >> 29 );& 0x5555555555555555;
+  x ^= ( x >> 29 ) & 0x5555555555555555;
   x ^= ( x << 17 ) & 0x71D67FFFEDA60000;
   x ^= ( x << 37 ) & 0xFFF7EEE000000000;
   x ^= ( x >> 43 );
@@ -236,7 +236,7 @@
 
  static int ak_random_mt19937_64_randomize_ptr( ak_random rnd, const ak_pointer ptr, const ssize_t size )
 {
-  ssize_t zerp = 0;
+  ssize_t idx = 0;
   ak_uint64 *value = ptr;
   if( rnd == NULL ) return ak_error_message( ak_error_null_pointer, __func__ ,
                                                       "use a null pointer to a random generator" );
@@ -246,7 +246,7 @@
                                                           "use initial vector with wrong length" );
 
   rnd->data.MT_64.mt[0] = value[0];
-  for( rnd->data.MT_64.index=1; rnd->data.MT.index < 312; rnd->data.MT_64.index++ )
+  for( rnd->data.MT_64.index=1; rnd->data.MT_64.index < 312; rnd->data.MT_64.index++ )
   {
       rnd->data.MT_64.mt[rnd->data.MT_64.index] = ( 6364136223846793005 * ( rnd->data.MT_64.mt[rnd->data.MT_64.index-1] ^ ( rnd->data.MT_64.mt[rnd->data.MT_64.index-1] >> 62 ) ) + rnd->data.MT_64.index );
   }
@@ -257,7 +257,7 @@
 
   static int ak_random_mt19937_64_random( ak_random rnd, const ak_pointer ptr, const ssize_t size )
  {
-   ssize_t zerp = 0;
+   ssize_t idx = 0;
    ak_uint64 *value = ptr;
    if( rnd == NULL ) return ak_error_message( ak_error_null_pointer, __func__ ,
                                                        "use a null pointer to a random generator" );
@@ -266,9 +266,9 @@
    if( size <= 0 ) return ak_error_message( ak_error_wrong_length, __func__ ,
                                                             "use a data vector with wrong length" );
    begin:
-     value[zerp] = (ak_uint64) ( rnd->data.MT_64.value );
+     value[idx] = (ak_uint64) ( rnd->data.MT_64.value );
      rnd->next( rnd );
-     if( ++zerp < size ) goto begin;
+     if( ++idx < size ) goto begin;
   return ak_error_ok;
  }
 
